@@ -1,0 +1,12 @@
+#!/bin/bash
+
+echo "update apt"
+sudo apt update
+
+echo "..upgrade"
+sudo apt upgrade
+
+echo "insatll:"
+sudo apt install sqlite
+
+
