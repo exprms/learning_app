@@ -1,0 +1,5 @@
+https://medium.com/@adebisiolayinka30/set-up-a-proxy-nginx-for-a-fastapi-application-part-two-26e30f7e9904
+
+https://www.youtube.com/watch?v=XlnmN4BfCxw
+
+https://github.com/cimeriann/containerxcicd/blob/main/nginx/nginx.conf

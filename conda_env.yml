@@ -1,0 +1,15 @@
+# setting up a conda environment for a simple python app
+# using this app for playing around with docker container
+# and then for testing with pytest
+# and gitlab CI/CD in a further step
+
+
+name: learning-app 
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - spyder
+  - python=3.11.5
+  - fastapi
+  - uvicorn
