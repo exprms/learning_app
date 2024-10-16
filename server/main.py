@@ -41,6 +41,11 @@ def get_pair(db:Session=Depends(get_db)):
     pairs = crud.get_pairs(db)
     return pairs
 
+@app.get("/pairs/topic/{topic_name}/chapter/{chapter_name}", response_model=list[schemas.Pair])
+def get_pair_from_topic(topic_name: str, chapter_name: str, db:Session=Depends(get_db)):
+    pairs = crud.get_pairs_from_topic(db, topic_name=topic_name, chapter_name=chapter_name)
+    return pairs
+
 @app.get("/pairs/{pair_id}/",response_model=schemas.Pair)
 def get_pair(pair_id:int, db:Session=Depends(get_db)):
     db_pair = crud.get_pair(db, pair_id=pair_id )

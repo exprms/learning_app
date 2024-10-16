@@ -6,7 +6,7 @@ import models, schemas
 def get_pair(db: Session, pair_id: int):
     return db.query(models.Pair).filter(models.Pair.id == pair_id).first()
 
-def get_pair_per_topic(
+def get_pairs_from_topic(
         db: Session, 
         topic_name: str, 
         chapter_name: str
