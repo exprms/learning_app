@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 import models, schemas
 
@@ -12,6 +13,19 @@ def get_pairs_from_topic(
         chapter_name: str
         ):
     return db.query(models.Pair).filter(models.Pair.topic == topic_name, models.Pair.chapter == chapter_name).all()
+
+def get_chapters_from_topic(
+        db: Session, 
+        topic_name: str
+        ):
+    stmt = select(models.Pair.chapter).where(models.Pair.topic == topic_name).distinct()
+    result = db.execute(stmt).all()
+    return result
+
+def get_topics(db: Session):
+    stmt = select(models.Pair.topic).distinct()
+    result = db.execute(stmt).all()
+    return result
 
 def get_pairs(db: Session):
     return db.query(models.Pair).all()

@@ -18,3 +18,4 @@ dependencies:
   - sqlalchemy
   - sqplite3
   - streamlit
+  - django

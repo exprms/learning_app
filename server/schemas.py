@@ -15,6 +15,11 @@ class Pair(BaseModel):
 class PairCreate(Pair):
     pass
 
+class Chapter(BaseModel):
+    chapter: str
+    
+class Topic(BaseModel):
+    topic: str
     
 # class TodoBase(BaseModel):
 #     title : str
