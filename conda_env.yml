@@ -16,6 +16,9 @@ dependencies:
   - pydantic
   - python-dotenv
   - sqlalchemy
-  - sqplite3
+#  - sqplite3
   - streamlit
   - django
+  - pip
+  - pip:
+    - streamlit-shortcuts

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import streamlit as st
+
 class WordPair:
     
     def __init__(self, left_word, right_word, hidden_side):
@@ -14,4 +16,7 @@ class WordPair:
             return [self.left, '']
         if self.hidden_side == 'none':
             return [self.left, self.right]
+        
+    def solve(self):
+        return [self.left, self.right]
 

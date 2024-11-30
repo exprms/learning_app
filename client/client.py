@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_shortcuts import button, add_keyboard_shortcuts
 import requests
 from random import shuffle 
 
@@ -9,7 +10,8 @@ from utils import WordPair
 def init_(x):
     # this functi0on is called only once at the beginning
     # initiialize the index: TODO improve this
-    st.session_state['index']=0
+    st.session_state['index'] = 0
+    st.session_state['solver'] = False
     
     # get all the topics for selection
     st.session_state['topics'] = get_topics(1)
@@ -39,6 +41,11 @@ def get_pairs(request_string):
 
 def change_index(delta):
     st.session_state.index = (st.session_state.index + delta) % len(st.session_state.pair_list)
+    st.session_state.solver = False
+    return 1
+
+def set_solver_true():
+    st.session_state.solver = True
     return 1
 
 def data_selection():
@@ -59,12 +66,27 @@ def data_selection():
     return request_string, hide
    
 
-def display(word_pair, solver):
+def display_block(word_pair, solver):
     
+    if solver == False:
+        active_pair = word_pair.display()
+    if solver == True:
+        active_pair = word_pair.solve()
+        
+    col1, col2 = st.columns(2)   
+    with col1:
+        st.header(active_pair[0])
+        # st.button(label="back", on_click=change_index, args=[-1], use_container_width=True)
+        button(label='back', shortcut='Alt+ArrowLeft', on_click=change_index, args=[-1], use_container_width=True)
+        
+    with col2:
+        st.header(active_pair[1])
+        # st.button(label="next", on_click=change_index, args=[1], use_container_width=True)   
+        button(label='next', shortcut='Alt+ArrowRight', on_click=change_index, args=[1], use_container_width=True)
     pass 
 
 def main():
-    init_(5)
+    init_(2)
     st.title('learning app')
     st.text('hello')
     
@@ -81,25 +103,19 @@ def main():
         hidden_side=hide
         )
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.header(word_pair.display()[0])
-        st.button(
-            label="back", 
-            on_click=change_index, 
-            args=[-1], 
-            use_container_width=True)
+    display_block(word_pair=word_pair, solver=st.session_state.solver)
+    
+    #st.button('solve', 'Alt+Space', on_click=set_solver_true)
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        pass
+    with c2:
+        button(label='solve', shortcut='Alt+Enter', on_click=set_solver_true, use_container_width=True) 
         
-    with col2:
-        st.header(word_pair.display()[1])
-        st.button(
-            label="next", 
-            on_click=change_index, 
-            args=[1],   
-            use_container_width=True)
-        st.button(
-            label='solve')
+    with c3:
+        pass
+    
     
     
 main()
-    
+
