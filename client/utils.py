@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-class WordList:
+class WordPair:
     
     def __init__(self, left_word, right_word, hidden_side):
         self.left = left_word
@@ -12,4 +12,6 @@ class WordList:
             return ['', self.right]
         if self.hidden_side == 'right':
             return [self.left, '']
+        if self.hidden_side == 'none':
+            return [self.left, self.right]
 
