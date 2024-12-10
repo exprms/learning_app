@@ -19,7 +19,26 @@ class Pair(Base):
     mode = Column(String(255), index=False)
     left = Column(String(255), index=False)
     right = Column(String(255), index=False)
+    
+class Vocab(Base):
+    __tablename__ = "vocab"
+    id = Column(Integer,primary_key=True,index=True)
+    topic = Column(String(255),index=True)
+    left = Column(String(255), index=False)
+    right = Column(String(255), index=False)
+    info_left = Column(String(255), index=True)
+    info_right = Column(String(255), index=False)
 
+class Tags(Base):
+    __tablename__ = "tags"
+    id = Column(Integer,primary_key=True,index=True)
+    tag = Column(String(255),index=True)
+    
+class VocabTags(Base):
+    __tablename__ = "vocabtags"
+    id = Column(Integer,primary_key=True,index=True)
+    vocab_id = Column(Integer,ForeignKey("vocab.id"))
+    tag_id = Column(Integer,ForeignKey("tags.id"))
 
 
 # class User(Base):
