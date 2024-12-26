@@ -1,23 +1,29 @@
 # -*- coding: utf-8 -*-
+import uvicorn
+import logging
+import json
+
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-import crud, models, schemas
-from database import SessionLocal, engine
-
-import uvicorn
-#from fastapi import FastAPI
+import server.crud as crud
+import server.schemas as schemas
+from server.database import SessionLocal, engine, Base
 
 
-models.Base.metadata.create_all(bind=engine)
-
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+
+logger = logging.getLogger('uvicorn.error')
+logger.setLevel(logging.DEBUG)
+logger.info("API is starting up")
+logger.info(uvicorn.Config.asgi_version)
 
 @app.get("/")
 async def index():
    return {"message": "Hello World"}
-
 
 
 #Dependency
@@ -29,40 +35,76 @@ def get_db():
         db.close()
 
 
-@app.post("/pairs/",response_model=schemas.Pair)
-def post_pair(pair:schemas.PairCreate, db:Session=Depends(get_db)):
-    # db_pair = crud.get_pair_per_topic(db, topic_name=pair.topic, chapter_name=pair.chapter)
-    # if db_pair:
-    #     raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_pair(db=db,pair=pair)
-
-@app.get("/pairs/", response_model=list[schemas.Pair])
-def get_pair(db:Session=Depends(get_db)):
-    pairs = crud.get_pairs(db)
+@app.get("/pair/{pair_id}", response_model=list[schemas.Pair])
+def get_pair(pair_id: int, db:Session=Depends(get_db)):
+    sql_stmt = crud.query_maker(q_type='pair_by_where', where_clause=f" where id = {pair_id}")
+    logger.debug(sql_stmt)
+    #pairs = crud.get_pair(db=db, where_clause=f" where id = {pair_id}")
+    pairs = crud.get_pair(db=db, sql_stmt=sql_stmt)
     return pairs
 
-@app.get("/pairs/topic/{topic_name}/chapter/{chapter_name}", response_model=list[schemas.Pair])
-def get_pair_from_topic(topic_name: str, chapter_name: str, db:Session=Depends(get_db)):
-    pairs = crud.get_pairs_from_topic(db, topic_name=topic_name, chapter_name=chapter_name)
+@app.post("/pair/pair_by_tags/", response_model=list[schemas.Pair])
+def get_pair_by_tags(tag_list: schemas.TagList, db:Session=Depends(get_db)):
+    if len(tag_list.tags)>0:
+        sql_stmt = crud.query_maker(q_type='pair_by_tags', tag_list=tag_list.tags)
+        logger.debug(sql_stmt)
+        pairs = crud.get_pair(db=db, sql_stmt=sql_stmt)
+    else:
+        pairs = crud.get_pair(db=db)
     return pairs
 
-@app.get("/chapters/{topic_name}", response_model=list[schemas.Chapter])
-def get_chapters_from_topic(topic_name: str, db:Session=Depends(get_db)):
-    chapters = crud.get_chapters_from_topic(db, topic_name=topic_name)
-    return chapters
+@app.get("/tags/", response_model=list[str])
+def get_tags(db:Session=Depends(get_db)):
+    return crud.get_tags(db=db)
+# @app.post("/pair", response_model=schemas.Pair)
+# def post_pair(pair:schemas.PairCreate, db:Session=Depends(get_db)):
+#     # db_pair = crud.get_pair_per_topic(db, topic_name=pair.topic, chapter_name=pair.chapter)
+#     # if db_pair:
+#     #     raise HTTPException(status_code=400, detail="Email already registered")
+#     return crud.create_pair(db=db,pair=pair)
 
-@app.get("/topics/", response_model=list[schemas.Topic])
-def get_pair_from_topic(db:Session=Depends(get_db)):
-    topics = crud.get_topics(db)
-    return topics
+# @app.get("/pair/pair_by_word/{left}", response_model=schemas.Pair)
+# def get_pair(left: str, db:Session=Depends(get_db)):
+#     pairs = crud.get_pair(db=db, left=left)
+#     return pairs
+
+# @app.post("/tag",response_model=schemas.Tag)
+# def post_tag(tag:schemas.TagCreate, db:Session=Depends(get_db)):
+#     # db_pair = crud.get_pair_per_topic(db, topic_name=pair.topic, chapter_name=pair.chapter)
+#     # if db_pair:
+#     #     raise HTTPException(status_code=400, detail="Email already registered")
+#     return crud.create_tag(db=db,tag=tag)
 
 
-@app.get("/pairs/{pair_id}/",response_model=schemas.Pair)
-def get_pair(pair_id:int, db:Session=Depends(get_db)):
-    db_pair = crud.get_pair(db, pair_id=pair_id )
-    if db_pair is None:
-        raise HTTPException(status_code=404, detail="Pair not found")
-    return db_pair
+# @app.get("/tag/by_id/{tag_id}", response_model=schemas.Tag)
+# def get_tag(tag_id: int, db:Session=Depends(get_db)):
+#     tags = crud.get_tag(db=db, tag_id=tag_id)
+#     return tags
+
+# @app.get("/tag/by_name/{tag}", response_model=schemas.Tag)
+# def get_tag(tag: str, db:Session=Depends(get_db)):
+#     tags = crud.get_tag(db=db, tag=tag)
+#     return tags
+
+# @app.get("/pairs/topic/{topic_name}/chapter/{chapter_name}", response_model=list[schemas.Pair])
+# def get_pair_from_topic(topic_name: str, chapter_name: str, db:Session=Depends(get_db)):
+#     pairs = crud.get_pairs_from_topic(db, topic_name=topic_name, chapter_name=chapter_name)
+#     return pairs
+
+# @app.get("/chapters/{topic_name}", response_model=list[schemas.Chapter])
+# def get_chapters_from_topic(topic_name: str, db:Session=Depends(get_db)):
+#     chapters = crud.get_chapters_from_topic(db, topic_name=topic_name)
+#     return chapters
+
+
+
+
+# @app.get("/pairs/{pair_id}/",response_model=schemas.Pair)
+# def get_pair(pair_id:int, db:Session=Depends(get_db)):
+#     db_pair = crud.get_pair(db, pair_id=pair_id )
+#     if db_pair is None:
+#         raise HTTPException(status_code=404, detail="Pair not found")
+#     return db_pair
 
 # @app.post("/users/",response_model=schemas.User)
 # def post_user(user:schemas.UserCreate, db:Session=Depends(get_db)):
