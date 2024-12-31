@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit.logger import get_logger
 from streamlit_shortcuts import button, add_keyboard_shortcuts
 import requests
 from random import shuffle 
@@ -6,34 +7,38 @@ from random import shuffle
 from constants import ENDPOINT
 from utils import WordPair
 
-@st.cache_data
+@st.cache_data(show_spinner="Fetching data from API...", ttl=600)
 def init_(x):
     # this functi0on is called only once at the beginning
     # initiialize the index: TODO improve this
+    st.session_state['logger'].info("initialize app-state")
     st.session_state['index'] = 0
     st.session_state['solver'] = False
+    st.session_state['hide'] = 'left'
+    st.session_state['tags'] = get_tags()
+    st.session_state['selected_tags'] = []
+    st.session_state['pair_list'] = get_pairs(tag_list=[])
+    return x
+
+def debug_session_state():
+    debug_str = f"index: {st.session_state['index']}"
+    debug_str += f" tags: {len(st.session_state['selected_tags'])}"
+    debug_str += f" pairs: {len(st.session_state['pair_list'])}"
+    return debug_str
     
-    # get all the topics for selection
-    st.session_state['topics'] = get_topics(1)
-    
-@st.cache_data
-def get_topics(x):
+# @st.cache_data
+def get_tags(x=1):
     # gets unique topics from database
-    topic_response = requests.get(f"{ENDPOINT}/topics/")
-    topic_list=[t['topic'] for t in topic_response.json()]
-    topic_list.sort()
-    return topic_list
+    tag_response = requests.get(f"{ENDPOINT}/tags/")
+    tag_list = tag_response.json()
+    tag_list.sort()
+    return tag_list
 
-def get_chapters(topic):
-    response = requests.get(f"{ENDPOINT}/chapters/{topic}")
-    response_list = [ch['chapter'] for ch in response.json()]
-    response_list.sort()
-    return response_list   
-
-@st.cache_data 
-def get_pairs(request_string):
+@st.cache_data(show_spinner="Fetching data from API...", ttl=600) 
+def get_pairs(tag_list):
     # gets called for each new request_Stiring - otherwise data cached
-    response = requests.get(request_string)
+    st.session_state['logger'].info("get pairs from database:")
+    response = requests.post(url=f"{ENDPOINT}/pair/pair_by_tags/", json={"tags": tag_list})
     pair_list = response.json()
     shuffle(pair_list)
     st.session_state['index'] = 0
@@ -49,22 +54,27 @@ def set_solver_true():
     return 1
 
 def data_selection():
+    st.session_state['logger'].info("TAG selection....")
     with st.sidebar:
         hide = st.radio("Hide:", ("left", "right", "none"))
+        st.session_state['hide'] = hide
         
     st.divider()
     
     with st.sidebar:
-        topic_name = st.radio("Topic:", st.session_state['topics'])
+        form = st.form(key = 'myform', clear_on_submit = False)
+        with form:
+            tags = st.multiselect(
+                label="Tags", 
+                options=st.session_state['tags'], 
+                default=st.session_state['selected_tags']
+                )    
+            submit = form.form_submit_button('load pairs')
+            if submit:
+                tags.sort()
+                st.session_state['selected_tags'] = tags
+                #return tags, hide
     
-    # get chapters depending on selected topic:
-    available_chapters = get_chapters(topic_name)
-    with st.sidebar:
-        chapter_name = st.radio("Kapitel:", available_chapters)   
-        
-    request_string = f"{ENDPOINT}/pairs/topic/{topic_name}/chapter/{chapter_name}"
-    return request_string, hide
-   
 
 def display_block(word_pair, solver):
     
@@ -86,21 +96,30 @@ def display_block(word_pair, solver):
     pass 
 
 def main():
-    init_(2)
-    st.title('learning app')
-    st.text('hello')
     
-    request_string, hide = data_selection()
-    st.session_state['pair_list'] = get_pairs(request_string)
-    st.text(f"list: {st.session_state['pair_list'][0]} hide: {hide}")
-    # index_list = [k for k in len(pair_list)]
-    st.text(f"index {st.session_state.index}")
-
-    # depending on which side is hidden:
+    st.session_state['logger'] = get_logger(__name__)
+    
+    init_(5)
+    
+    st.session_state['logger'].info('rerun main')  
+    st.session_state['logger'].info(f"session state {debug_session_state()}")
+    
+    st.title('learning app')
+        
+    x = requests.get(f"{ENDPOINT}")
+    if x.status_code==200:
+        st.session_state['logger'].info(f"API ALIVE: {x.json()}")  
+    
+    st.text(f"session state: {debug_session_state()}")
+    
+    data_selection()
+    st.session_state['pair_list'] = get_pairs(st.session_state['selected_tags'])
+    
+    # # depending on which side is hidden:
     word_pair = WordPair(
         left_word=st.session_state.pair_list[st.session_state.index]['left'], 
         right_word=st.session_state.pair_list[st.session_state.index]['right'], 
-        hidden_side=hide
+        hidden_side=st.session_state['hide']
         )
 
     display_block(word_pair=word_pair, solver=st.session_state.solver)
@@ -115,7 +134,6 @@ def main():
     with c3:
         pass
     
-    
-    
+        
 main()
 

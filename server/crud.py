@@ -1,78 +1,48 @@
 # -*- coding: utf-8 -*-
+import json
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import text
 
-import models, schemas
+import server.schemas as schemas
+from server.constants import TABLE_NAME, csv_map, TAG_VIEW
 
-def get_pair(db: Session, pair_id: int):
-    return db.query(models.Pair).filter(models.Pair.id == pair_id).first()
+pair_col = csv_map.target_column_names
 
-def get_pairs_from_topic(
-        db: Session, 
-        topic_name: str, 
-        chapter_name: str
-        ):
-    return db.query(models.Pair).filter(models.Pair.topic == topic_name, models.Pair.chapter == chapter_name).all()
+def pair_mapper(cols: list[str], item_: tuple) -> dict:
+    out_dict = {}
+    for index, col in enumerate(cols):
+        if col == csv_map.json_columns.name:
+            tmp = json.loads(item_[index])[csv_map.json_columns.name]
+            out_dict.update({col: tmp})
+        else:
+            out_dict.update({col: item_[index]})
+         
+    return out_dict
 
-def get_chapters_from_topic(
-        db: Session, 
-        topic_name: str
-        ):
-    stmt = select(models.Pair.chapter).where(models.Pair.topic == topic_name).distinct()
-    result = db.execute(stmt).all()
-    return result
-
-def get_topics(db: Session):
-    stmt = select(models.Pair.topic).distinct()
-    result = db.execute(stmt).all()
-    return result
-
-def get_pairs(db: Session):
-    return db.query(models.Pair).all()
-
-def create_pair(db: Session, pair: schemas.PairCreate):
-    db_pair = models.Pair(
-        topic=pair.topic,
-        chapter=pair.chapter,
-        mode=pair.mode,
-        left=pair.left,
-        right=pair.right)
+def query_maker(q_type, where_clause = "", tag_list = []) -> str:
+    pair_col = csv_map.target_column_names
+    if q_type == 'pair_by_where':
+        return f"SELECT {','.join(pair_col)} FROM {TABLE_NAME} {where_clause}"
+      
+    elif (q_type == 'pair_by_tags'):
+        sql_str = []
+        for item in tag_list:
+            tmp = f"SELECT distinct {TABLE_NAME}.* " 
+            tmp += f" FROM {TABLE_NAME}, json_each(json_extract({TABLE_NAME}.{csv_map.json_columns.name}, '$.{csv_map.json_columns.name}')) " 
+            tmp += f" WHERE json_each.value = '{item}'"
+            sql_str.append(tmp)
+        return " INTERSECT ".join(sql_str)
     
-    db.add(db_pair)
-    db.commit()
-    db.refresh(db_pair)
-    return db_pair
+    pass
+    
+def get_pair(db: Session, sql_stmt: str = f"select * from {TABLE_NAME}") -> list[schemas.Pair]:    
+    stmt = text(sql_stmt)
+    result = db.execute(stmt).fetchall()
+    return [schemas.Pair(**pair_mapper(cols=pair_col, item_=row)) for row in result]
 
-# def get_user(db: Session, user_id: int):
-#     return db.query(models.User).filter(models.User.id == user_id).first()
-
-
-# def get_user_by_email(db: Session, email: str):
-#     return db.query(models.User).filter(models.User.email == email).first()
-
-
-# def get_users(db: Session, skip:int=0, limit:int=100):
-#     # return db.query(models.User).offset(skip).limit(limit).all()
-#     return db.query(models.User).offset(skip).limit(limit).all()
-
-
-# def create_user(db: Session, user:schemas.UserCreate):
-#     db_user = models.User(email=user.email,
-#                           name=user.name)
-#     db.add(db_user)
-#     db.commit()
-#     db.refresh(db_user)
-#     return db_user
-
-
-# def get_todos(db: Session, skip:int=0, limit: int=100):
-#     return db.query(models.Todo).offset(skip).limit(limit).all()
-
-
-# def create_user_todo(db:Session, todo:schemas.TodoCreate, user_id : int):
-#     db_todo = models.Todo(**todo.model_dump(),owner_id=user_id )
-#     db.add(db_todo)
-#     db.commit()
-#     db.refresh(db_todo)
-#     return db_todo''
+def get_tags(db: Session) -> list[str]:
+    stmt = text(f"SELECT * FROM {TAG_VIEW}")
+    result = db.execute(stmt).fetchall()
+    return [item[0] for item in result]
+    
 
