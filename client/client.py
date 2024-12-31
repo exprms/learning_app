@@ -1,11 +1,11 @@
 import streamlit as st
 from streamlit.logger import get_logger
-from streamlit_shortcuts import button, add_keyboard_shortcuts
+from streamlit_shortcuts import button
 import requests
 from random import shuffle 
 
 from constants import ENDPOINT
-from utils import WordPair
+from utils import Pair 
 
 @st.cache_data(show_spinner="Fetching data from API...", ttl=600)
 def init_(x):
@@ -79,19 +79,17 @@ def data_selection():
 def display_block(word_pair, solver):
     
     if solver == False:
-        active_pair = word_pair.display()
+        active_pair = word_pair.display(hidden_side=st.session_state['hide'])
     if solver == True:
         active_pair = word_pair.solve()
         
     col1, col2 = st.columns(2)   
     with col1:
-        st.header(active_pair[0])
-        # st.button(label="back", on_click=change_index, args=[-1], use_container_width=True)
+        st.header(active_pair[0]) # word
         button(label='back', shortcut='Alt+ArrowLeft', on_click=change_index, args=[-1], use_container_width=True)
         
     with col2:
-        st.header(active_pair[1])
-        # st.button(label="next", on_click=change_index, args=[1], use_container_width=True)   
+        st.header(active_pair[1]) # word
         button(label='next', shortcut='Alt+ArrowRight', on_click=change_index, args=[1], use_container_width=True)
     pass 
 
@@ -115,16 +113,10 @@ def main():
     data_selection()
     st.session_state['pair_list'] = get_pairs(st.session_state['selected_tags'])
     
-    # # depending on which side is hidden:
-    word_pair = WordPair(
-        left_word=st.session_state.pair_list[st.session_state.index]['left'], 
-        right_word=st.session_state.pair_list[st.session_state.index]['right'], 
-        hidden_side=st.session_state['hide']
-        )
+    word_pair = Pair(**st.session_state.pair_list[st.session_state.index])
 
     display_block(word_pair=word_pair, solver=st.session_state.solver)
     
-    #st.button('solve', 'Alt+Space', on_click=set_solver_true)
     c1, c2, c3 = st.columns(3)
     with c1:
         pass
