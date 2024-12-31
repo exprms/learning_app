@@ -7,7 +7,7 @@ from random import shuffle
 from constants import ENDPOINT
 from utils import Pair 
 
-@st.cache_data(show_spinner="Fetching data from API...", ttl=600)
+@st.cache_data(show_spinner="Fetching data from API...")
 def init_(x):
     # this functi0on is called only once at the beginning
     # initiialize the index: TODO improve this
@@ -34,7 +34,7 @@ def get_tags(x=1):
     tag_list.sort()
     return tag_list
 
-@st.cache_data(show_spinner="Fetching data from API...", ttl=600) 
+@st.cache_data(show_spinner="Fetching data from API...", ttl=3600) 
 def get_pairs(tag_list):
     # gets called for each new request_Stiring - otherwise data cached
     st.session_state['logger'].info("get pairs from database:")
