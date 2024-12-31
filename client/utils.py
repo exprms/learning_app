@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from pydantic import BaseModel
 import streamlit as st
 
 class WordPair:
@@ -20,3 +21,18 @@ class WordPair:
     def solve(self):
         return [self.left, self.right]
 
+#class DebugSession(BaseModel):
+    # index: int
+    # _pairs: list[str]
+    # _tags: list[str]
+
+    # @property
+    # def pairs(self):
+    #     return len(self._pairs)
+    
+    # @property
+    # def tags(self):
+    #     return len(self._tags)
+    
+    # def __str__(self):
+    #     return f"index: {self.index}, pairs: {self.pairs}, tags: {self.tags}"
